@@ -1,0 +1,30 @@
+﻿@using Syncfusion.Blazor.LinearGauge
+@using View.Data
+@using Orientation = Syncfusion.Blazor.LinearGauge.Orientation
+
+<SfLinearGauge Title="Temparature" Orientation="Orientation.Vertical" Background="transparent">
+    <LinearGaugeTitleStyle FontFamily="inherit"></LinearGaugeTitleStyle>
+    <LinearGaugeContainer Width="13" RoundedCornerRadius="5" Type="ContainerType.Thermometer">
+        <LinearGaugeContainerBorder Width="1"></LinearGaugeContainerBorder>
+        <LinearGaugeAxes>
+            <LinearGaugeAxis Minimum="-30" Maximum="100">
+                <LinearGaugeLine Width="0"/>
+                <LinearGaugeMajorTicks Color="#9e9e9e" Interval="20" Height="20"/>
+                <LinearGaugeMinorTicks Color="#9e9e9e" Interval="10" Height="10"/>
+                <LinearGaugeAxisLabelStyle>
+                    <LinearGaugeAxisLabelFont FontFamily="inherit"></LinearGaugeAxisLabelFont>
+                </LinearGaugeAxisLabelStyle>
+                <LinearGaugePointers>
+                    <LinearGaugePointer PointerValue="@Data.Temp" Height="13" Width="13" Type="Point.Bar" Color="#f02828"/>
+                </LinearGaugePointers>
+            </LinearGaugeAxis>
+        </LinearGaugeAxes>
+    </LinearGaugeContainer>
+</SfLinearGauge>
+
+@code {
+
+    [Parameter]
+    public Temperature? Data { get; set; }
+
+}

@@ -1,0 +1,102 @@
+﻿@page "/"
+@using View.Data
+@using System.IO.Ports
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<MudPaper>
+    <MudToolBar>
+        <MudSelect T="string" Label="Com Port" AnchorOrigin="Origin.BottomCenter" @bind-Value="ComPort">
+            @foreach (var item in SerialPort.GetPortNames()){
+                <MudSelectItem Value="@item"/>
+            }
+        </MudSelect>
+        <MudSpacer/>
+        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Success" OnClick="Start">Start</MudButton>
+        <MudSpacer/>
+        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="Stop">Stop</MudButton>
+        <MudSpacer/>
+        @if (IsConnected){
+            <MudSelect T="string" Label="Com Port" AnchorOrigin="Origin.BottomCenter" @bind-Value="Message">
+                @foreach (var com in Commands){
+                    <MudSelectItem Value="@com.Key"/>
+                }
+            </MudSelect>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Send" Color="Color.Info" OnClick="() => Port_DataSend(Message)">Send</MudButton>
+        }
+    </MudToolBar>
+</MudPaper>
+<MudPaper Class="text-center" Style="margin-top: 20vh !important;">
+    <Thermometer Data="Temp"/>
+</MudPaper>
+
+@code{
+
+    private Temperature Temp { get; set; } = new();
+
+    private string ComPort { get; set; } = String.Empty;
+
+    private bool IsConnected { get; set; }
+
+    private SerialPort Port { get; set; } = new();
+
+    private Dictionary<string, string> Commands { get; set; } = new();
+
+    private string Message { get; set; } = String.Empty;
+
+    protected override Task OnInitializedAsync(){
+        Port.DataReceived += Port_DataReceived;
+        Commands.Add("Timer 0", "C:tr0");
+        Commands.Add("Timer 1", "C:tr1");
+        Commands.Add("Timer 2", "C:tr2");
+        Commands.Add("Timer 3", "C:tr3");
+        Commands.Add("Temperature", "I:t");
+        Commands.Add("All", "I:a");
+        Commands.Add("Quit", "C:q");
+        return base.OnInitializedAsync();
+    }
+
+    private void Start(){
+        if (ComPort == String.Empty){
+            Snackbar.Add("No Com Port Selected", Severity.Error);
+            return;
+        }
+        Port.PortName = ComPort;
+        Port.BaudRate = 9600;
+        Port.Parity = Parity.None;
+        Port.DataBits = 8;
+        Port.StopBits = StopBits.One;
+        Port.Open();
+        IsConnected = true;
+        Snackbar.Add($"Connected to {ComPort}", Severity.Info);
+    }
+
+    private void Stop(){
+        Port.Close();
+        IsConnected = false;
+        Snackbar.Add("Connection closed", Severity.Info);
+    }
+
+    private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e){
+        SerialPort s = (SerialPort)sender;
+        try{
+            string data = s.ReadExisting();
+            if (data == "") return;
+        }
+        catch (Exception ex){
+            Console.WriteLine(ex);
+            throw;
+        }
+    }
+
+    private void Port_DataSend(string message){
+        Port.Write(message);
+        Snackbar.Add($"message {message} sent", Severity.Info);
+        Message = String.Empty;
+    }
+
+    public void Dispose(){
+        Port.DataReceived -= Port_DataReceived;
+    }
+
+}
