@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using View.Data
 @using System.IO.Ports
+@using System.Text.RegularExpressions;
 @inject ISnackbar Snackbar
 @implements IDisposable
 
@@ -22,7 +23,7 @@
                     <MudSelectItem Value="@com.Key"/>
                 }
             </MudSelect>
-            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Send" Color="Color.Info" OnClick="() => Port_DataSend(Message)">Send</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Send" Color="Color.Info" OnClick="() => DataSend(Message)">Send</MudButton>
         }
     </MudToolBar>
 </MudPaper>
@@ -44,15 +45,19 @@
 
     private string Message { get; set; } = String.Empty;
 
+    private string Queue { get; set; } = String.Empty;
+
+    private int Counter { get; set; }
+
     protected override Task OnInitializedAsync(){
-        Port.DataReceived += Port_DataReceived;
-        Commands.Add("Timer 0", "C:tr0");
-        Commands.Add("Timer 1", "C:tr1");
-        Commands.Add("Timer 2", "C:tr2");
-        Commands.Add("Timer 3", "C:tr3");
-        Commands.Add("Temperature", "I:t");
-        Commands.Add("All", "I:a");
-        Commands.Add("Quit", "C:q");
+        Port.DataReceived += DataReceived;
+        Commands.Add("Timer 0", "<C:tr0>");
+        Commands.Add("Timer 1", "<C:tr1>");
+        Commands.Add("Timer 2", "<C:tr2>");
+        Commands.Add("Timer 3", "<C:tr3>");
+        Commands.Add("Temperature", "<I:t>");
+        Commands.Add("All", "<I:a>");
+        Commands.Add("Quit", "<C:q>");
         return base.OnInitializedAsync();
     }
 
@@ -77,26 +82,47 @@
         Snackbar.Add("Connection closed", Severity.Info);
     }
 
-    private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e){
+    private void DataReceived(object sender, SerialDataReceivedEventArgs e){
         SerialPort s = (SerialPort)sender;
         try{
             string data = s.ReadExisting();
             if (data == "") return;
+            Convert(data);
         }
         catch (Exception ex){
             Console.WriteLine(ex);
-            throw;
         }
     }
 
-    private void Port_DataSend(string message){
+    private void Convert(string data){
+        Queue += data;
+        if (data.Contains('>')){
+            UpdateData();
+        }
+    }
+
+    private void UpdateData(){
+        if (Counter > 3){
+            string pattern = @"(\d+\.\d+)";
+            Match match = Regex.Match(Queue, pattern);
+            if (match.Success){
+                var temp = match.Value.Trim().Replace('.', ',');
+                Temp.Temp = System.Convert.ToDouble(temp);
+            }
+            InvokeAsync(StateHasChanged);
+        }
+        Counter++;
+        Queue = String.Empty;
+    }
+
+    private void DataSend(string message){
         Port.Write(message);
         Snackbar.Add($"message {message} sent", Severity.Info);
         Message = String.Empty;
     }
 
     public void Dispose(){
-        Port.DataReceived -= Port_DataReceived;
+        Port.DataReceived -= DataReceived;
     }
 
 }
