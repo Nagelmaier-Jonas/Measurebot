@@ -29,6 +29,7 @@
 </MudPaper>
 <MudPaper Class="text-center" Style="margin-top: 20vh !important;">
     <Thermometer Data="Temp"/>
+    <Switch Value="Switch"/>
 </MudPaper>
 
 @code{
@@ -48,6 +49,8 @@
     private string Queue { get; set; } = String.Empty;
 
     private int Counter { get; set; }
+
+    public bool Switch { get; set; }
 
     protected override Task OnInitializedAsync(){
         Port.DataReceived += DataReceived;
@@ -109,6 +112,8 @@
                 var temp = match.Value.Trim().Replace('.', ',');
                 Temp.Temp = System.Convert.ToDouble(temp);
             }
+            if (Queue.Contains("on")) Switch = true;
+            if (Queue.Contains("off")) Switch = false;
             InvokeAsync(StateHasChanged);
         }
         Counter++;

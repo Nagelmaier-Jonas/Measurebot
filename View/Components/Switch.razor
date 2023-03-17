@@ -1,0 +1,10 @@
+﻿<MudToggleIconButton @bind-Toggled="@Value" Disabled="true"
+                     Icon="@Icons.Material.Filled.SensorsOff" Color="@Color.Error" Title="Off"
+                     ToggledIcon="@Icons.Material.Filled.Sensors" ToggledColor="@Color.Success" ToggledTitle="On"/>
+
+<span>Switch is @(Value ? "On" : "Off")</span>
+
+@code {
+    [Parameter]
+    public bool Value { get; set; }
+}
