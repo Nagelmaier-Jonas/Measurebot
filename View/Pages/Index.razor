@@ -18,7 +18,7 @@
         <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="Stop">Stop</MudButton>
         <MudSpacer/>
         @if (IsConnected){
-            <MudSelect T="string" Label="Com Port" AnchorOrigin="Origin.BottomCenter" @bind-Value="Message">
+            <MudSelect T="string" Label="Commands" AnchorOrigin="Origin.BottomCenter" @bind-Value="Message">
                 @foreach (var com in Commands){
                     <MudSelectItem Value="@com.Key"/>
                 }
@@ -27,6 +27,9 @@
         }
     </MudToolBar>
 </MudPaper>
+@if (IsConnected && Counter <= 4){
+    <MudProgressLinear Color="Color.Warning" Value="@Counter" Class="my-7" Min="1" Max="5" Rounded="true"/>
+}
 <MudPaper Class="text-center" Style="margin-top: 20vh !important;">
     <Thermometer Data="Temp"/>
     <Switch Value="Switch"/>
@@ -50,7 +53,7 @@
 
     private int Counter { get; set; }
 
-    public bool Switch { get; set; }
+    private bool Switch { get; set; }
 
     protected override Task OnInitializedAsync(){
         Port.DataReceived += DataReceived;
@@ -74,9 +77,14 @@
         Port.Parity = Parity.None;
         Port.DataBits = 8;
         Port.StopBits = StopBits.One;
-        Port.Open();
-        IsConnected = true;
-        Snackbar.Add($"Connected to {ComPort}", Severity.Info);
+        try{
+            Port.Open();
+            IsConnected = true;
+            Snackbar.Add($"Connected to {ComPort}", Severity.Info);
+        }
+        catch (Exception e){
+            Snackbar.Add($"Port {ComPort} already occupied", Severity.Error);
+        }
     }
 
     private void Stop(){
@@ -118,6 +126,7 @@
         }
         Counter++;
         Queue = String.Empty;
+        InvokeAsync(StateHasChanged);
     }
 
     private void DataSend(string message){
